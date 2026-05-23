@@ -5,6 +5,10 @@
   "version": "0.0.1",
   "publisher": "shouryaghosh",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danger-ahead/vsc-tabbed-emulator.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
