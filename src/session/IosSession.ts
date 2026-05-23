@@ -2,9 +2,14 @@ import { execFile, spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import { promisify } from 'util';
 import { waitForBoot } from '../discovery/ios';
-import { IEmulatorSession, SessionState } from './types';
+import { HardwareButton, IEmulatorSession, SessionState } from './types';
 
 const execFileAsync = promisify(execFile);
+
+const IOS_BUTTON: Record<HardwareButton, string> = {
+  home: 'home',
+  recent: 'app-switcher'
+};
 
 export interface IosSessionOptions {
   baguettePath: string;
@@ -69,6 +74,24 @@ export class IosSession extends EventEmitter implements IEmulatorSession {
       const p = spawn(this.opts.baguettePath, ['shutdown', '--udid', this.opts.udid]);
       p.on('close', () => resolve());
       p.on('error', () => resolve());
+    });
+  }
+
+  async pressHardwareButton(button: HardwareButton): Promise<void> {
+    if (this._state.kind !== 'running') return;
+    const target = IOS_BUTTON[button];
+    await new Promise<void>((resolve) => {
+      const p = spawn(this.opts.baguettePath, ['press', '--udid', this.opts.udid, '--button', target]);
+      let stderr = '';
+      p.stderr?.on('data', (c) => (stderr += c));
+      p.on('close', (exit) => {
+        if (exit !== 0) this.log(`baguette press ${target} exit=${exit} ${stderr.trim()}`);
+        resolve();
+      });
+      p.on('error', (err) => {
+        this.log(`baguette press ${target} error: ${err.message}`);
+        resolve();
+      });
     });
   }
 

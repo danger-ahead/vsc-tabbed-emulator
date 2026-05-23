@@ -1,12 +1,20 @@
 html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #ddd; font-family: -apple-system, system-ui, sans-serif; }
 
 #stage {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100vh;
+}
+
+#screen-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 #screen {
@@ -29,6 +37,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #ddd;
   background: rgba(0,0,0,0.55);
   padding: 4px 8px;
   border-radius: 4px;
+  display: none; /* footer-status takes over once streaming */
 }
 
 #status {
@@ -61,3 +70,52 @@ html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #ddd;
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+#footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  min-height: 44px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(18,18,18,0.85);
+  user-select: none;
+}
+
+#footer-status {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#toolbar {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border: none;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
+  opacity: 0.35;
+  pointer-events: none;
+}
+#stage.has-stream .tb-btn { opacity: 1; pointer-events: auto; }
+.tb-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.tb-btn:active { background: rgba(255,255,255,0.18); }
+.tb-btn:focus-visible { outline: 2px solid rgba(120,170,255,0.7); outline-offset: 2px; }

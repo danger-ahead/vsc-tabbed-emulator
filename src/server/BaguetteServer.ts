@@ -17,6 +17,14 @@ export class BaguetteServer extends EventEmitter {
     return BaguetteServer.instance;
   }
 
+  /** Bypass the grace period and tear down the shared serve process now.
+   *  Returns a promise that resolves once the process has actually exited. */
+  static shutdownNow(): Promise<void> {
+    const inst = BaguetteServer.instance;
+    if (!inst) return Promise.resolve();
+    return inst.forceShutdown();
+  }
+
   private proc?: ChildProcess;
   private refCount = 0;
   private startPromise?: Promise<number>;
@@ -58,6 +66,17 @@ export class BaguetteServer extends EventEmitter {
       if (this.refCount === 0) this.shutdown();
     }, SHUTDOWN_GRACE_MS);
     this.shutdownTimer.unref();
+  }
+
+  /** Cancel the grace timer (if any), tear down the serve process now,
+   *  and resolve when its `close` event fires (or after a hard cap). */
+  async forceShutdown(): Promise<void> {
+    if (this.shutdownTimer) {
+      clearTimeout(this.shutdownTimer);
+      this.shutdownTimer = undefined;
+    }
+    if (!this.shutdownPromise) this.shutdown();
+    if (this.shutdownPromise) await this.shutdownPromise;
   }
 
   private async startInternal(): Promise<number> {

@@ -6,6 +6,13 @@ import * as vscode from 'vscode';
 
 const execFileAsync = promisify(execFile);
 
+/** The baguette version this extension has been built and tested against.
+ *  We pin to an exact version because baguette is pre-1.0 and ships
+ *  breaking changes (e.g., the `stream` CLI subcommand was broken in some
+ *  builds; the WS wire schema is not yet stable). Newer/older versions
+ *  may still work — we warn rather than fail. */
+export const PINNED_BAGUETTE_VERSION = '0.1.73';
+
 export interface IosSimulator {
   udid: string;
   name: string;
@@ -49,6 +56,28 @@ export function preflight(): void {
   if (process.arch !== 'arm64') {
     throw new Error('iOS Simulator support requires Apple Silicon (arm64). baguette is not built for Intel Macs.');
   }
+}
+
+/** Run `baguette --version` and return the trimmed version string,
+ *  or undefined if the binary doesn't respond. */
+export async function getBaguetteVersion(baguette: string): Promise<string | undefined> {
+  try {
+    const { stdout } = await execFileAsync(baguette, ['--version'], { timeout: 3000 });
+    return stdout.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Check the installed baguette against the pinned version. Returns a
+ *  human-readable warning string if there's a mismatch, undefined if
+ *  the version matches (or can't be determined). */
+export async function checkBaguetteVersion(baguette: string): Promise<string | undefined> {
+  const v = await getBaguetteVersion(baguette);
+  if (!v) return `could not read \`baguette --version\` — pinned version is ${PINNED_BAGUETTE_VERSION}`;
+  if (v === PINNED_BAGUETTE_VERSION) return undefined;
+  return `installed baguette is v${v}, this extension was tested against v${PINNED_BAGUETTE_VERSION}. ` +
+         `Run \`brew reinstall tddworks/tap/baguette\` if you see issues.`;
 }
 
 export async function listSimulators(baguette: string): Promise<IosSimulator[]> {

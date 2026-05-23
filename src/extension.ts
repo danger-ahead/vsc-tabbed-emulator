@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { listAvds, resolveAndroidSdkPath } from './discovery/android';
-import { listSimulators, preflight, resolveBaguettePath } from './discovery/ios';
+import { checkBaguetteVersion, listSimulators, preflight, resolveBaguettePath } from './discovery/ios';
 import { EmulatorClient } from './grpc/EmulatorClient';
 import { EmulatorPanel } from './panel/EmulatorPanel';
 import { BaguetteServer } from './server/BaguetteServer';
@@ -22,12 +22,14 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('tabbedEmulator.openIos', () =>
       openIos(context)
     ),
-    vscode.commands.registerCommand('tabbedEmulator.stopAll', () => stopAll())
+    vscode.commands.registerCommand('tabbedEmulator.stopAll', () => stopAll(8000))
   );
 }
 
-export function deactivate(): void {
-  stopAll();
+/** VS Code allots ~5s for `deactivate()` before it hard-kills the extension
+ *  host. Keep our budget below that so shutdowns we *can* finish do finish. */
+export async function deactivate(): Promise<void> {
+  await stopAll(4500);
 }
 
 async function openAndroid(context: vscode.ExtensionContext): Promise<void> {
@@ -111,6 +113,12 @@ async function openIos(context: vscode.ExtensionContext): Promise<void> {
     return;
   }
 
+  const versionWarning = await checkBaguetteVersion(baguettePath);
+  if (versionWarning) {
+    output.appendLine(`[baguette] ${versionWarning}`);
+    void vscode.window.showWarningMessage(`baguette version mismatch: ${versionWarning}`);
+  }
+
   let sims;
   try {
     sims = await listSimulators(baguettePath);
@@ -177,7 +185,16 @@ async function openIos(context: vscode.ExtensionContext): Promise<void> {
   }
 }
 
-function stopAll(): void {
-  for (const panel of activePanels) panel.dispose();
+async function stopAll(timeoutMs: number): Promise<void> {
+  const panels = Array.from(activePanels);
   activePanels.clear();
+  // Kick off shutdown on every panel synchronously; each saves its own
+  // `stopped()` promise we can drain in parallel.
+  for (const p of panels) p.dispose();
+
+  const drain = Promise.all(panels.map((p) => p.stopped())).then(() =>
+    BaguetteServer.shutdownNow()
+  );
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
+  await Promise.race([drain, timeout]);
 }

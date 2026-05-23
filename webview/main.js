@@ -10,6 +10,7 @@ screenEl.addEventListener('error', () => {
   }
 });
 const statusText = document.getElementById('status-text');
+const footerStatus = document.getElementById('footer-status');
 const logEl = document.getElementById('log');
 
 const MAX_LOG_LINES = 200;
@@ -51,13 +52,13 @@ function showFrame(base64, format, size, width, height) {
   const now = performance.now();
   if (now - lastFpsTick >= 1000) {
     const fps = (framesSinceTick * 1000) / (now - lastFpsTick);
-    statusText.textContent = `Streaming · ${fps.toFixed(1)} fps`;
+    footerStatus.textContent = `Streaming · ${fps.toFixed(1)} fps`;
     stage.classList.add('has-stream');
     lastFpsTick = now;
     framesSinceTick = 0;
   } else if (framesReceived === 1) {
     stage.classList.add('has-stream');
-    statusText.textContent = 'Streaming';
+    footerStatus.textContent = 'Streaming';
   }
 }
 
@@ -85,17 +86,21 @@ function handleState(state) {
   switch (state.kind) {
     case 'starting':
       statusText.textContent = 'Starting emulator…';
+      footerStatus.textContent = 'Starting…';
       break;
     case 'running':
       statusText.textContent = `Booted (${state.serial}). Waiting for frames…`;
+      footerStatus.textContent = 'Waiting for frames…';
       break;
     case 'stopped':
       statusText.textContent = `Stopped${state.reason ? `: ${state.reason}` : ''}`;
+      footerStatus.textContent = `Stopped${state.reason ? `: ${state.reason}` : ''}`;
       stage.classList.remove('has-stream');
       screenEl.removeAttribute('src');
       break;
     case 'error':
       statusText.textContent = `Error: ${state.message}`;
+      footerStatus.textContent = `Error: ${state.message}`;
       stage.classList.remove('has-stream');
       screenEl.removeAttribute('src');
       break;
@@ -188,5 +193,16 @@ function forwardKey(eventType, e) {
 
 window.addEventListener('keydown', (e) => forwardKey('keydown', e));
 window.addEventListener('keyup', (e) => forwardKey('keyup', e));
+
+// ---- Hardware buttons ----
+
+document.querySelectorAll('#toolbar .tb-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const name = btn.getAttribute('data-button');
+    if (name === 'home' || name === 'recent') {
+      vscode.postMessage({ type: 'button', button: name });
+    }
+  });
+});
 
 vscode.postMessage({ type: 'ready' });

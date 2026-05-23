@@ -6,10 +6,13 @@ export type SessionState =
   | { kind: 'stopped'; reason?: string }
   | { kind: 'error'; message: string };
 
+export type HardwareButton = 'home' | 'recent';
+
 export interface IEmulatorSession extends EventEmitter {
   readonly state: SessionState;
   start(): void;
   stop(): Promise<void>;
+  pressHardwareButton(button: HardwareButton): Promise<void>;
 }
 
 export type FrameFormat = 'PNG' | 'JPEG' | 'RGB888' | 'RGBA8888';

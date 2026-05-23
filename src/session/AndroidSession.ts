@@ -1,9 +1,15 @@
 import { ChildProcess, spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import { adbBinary, emulatorBinary } from '../discovery/android';
-import { IEmulatorSession, SessionState } from './types';
+import { HardwareButton, IEmulatorSession, SessionState } from './types';
 
 export { SessionState } from './types';
+
+// Android KeyEvent codes — https://developer.android.com/reference/android/view/KeyEvent
+const ANDROID_KEYCODE: Record<HardwareButton, number> = {
+  home: 3,    // KEYCODE_HOME
+  recent: 187 // KEYCODE_APP_SWITCH
+};
 
 export interface AndroidSessionOptions {
   sdkPath: string;
@@ -85,6 +91,25 @@ export class AndroidSession extends EventEmitter implements IEmulatorSession {
     if (this.proc && !this.proc.killed) {
       this.proc.kill('SIGTERM');
     }
+  }
+
+  async pressHardwareButton(button: HardwareButton): Promise<void> {
+    if (this._state.kind !== 'running') return;
+    const code = ANDROID_KEYCODE[button];
+    const adb = adbBinary(this.opts.sdkPath);
+    await new Promise<void>((resolve) => {
+      const p = spawn(adb, ['-s', this.serial, 'shell', 'input', 'keyevent', String(code)]);
+      let stderr = '';
+      p.stderr?.on('data', (c) => (stderr += c));
+      p.on('close', (exit) => {
+        if (exit !== 0) this.log(`adb keyevent ${button} exit=${exit} ${stderr.trim()}`);
+        resolve();
+      });
+      p.on('error', (err) => {
+        this.log(`adb keyevent ${button} error: ${err.message}`);
+        resolve();
+      });
+    });
   }
 
   private pollBoot(): void {

@@ -1,6 +1,6 @@
 # Tabbed Emulator
 
-A VS Code extension that runs Android emulators **and iOS Simulators** inside a VS Code tab — no separate window needed. Touch and keyboard input are forwarded directly to the device.
+A VS Code extension that runs Android emulators and iOS Simulators inside a VS Code tab — no separate window needed. Touch and keyboard input are forwarded directly to the device.
 
 ### Data flow — Android
 
@@ -33,7 +33,12 @@ A VS Code extension that runs Android emulators **and iOS Simulators** inside a 
 - **For iOS** (macOS only):
   - **Apple Silicon** Mac (arm64) — baguette is not built for Intel
   - **Xcode 26.3+** with iOS Simulator runtime installed
-  - **baguette**: `brew install tddworks/tap/baguette`
+  - **baguette v0.1.73** — tested/pinned version. Install via the [tddworks tap](https://github.com/tddworks/baguette):
+    ```bash
+    brew install tddworks/tap/baguette
+    baguette --version   # expect 0.1.73
+    ```
+    The extension will surface a warning on startup if a different version is detected (pre-1.0 baguette ships breaking changes; the `stream` CLI was broken in some intermediate builds and the WS wire schema is not yet stable).
   - At least one iOS Simulator created in Xcode (Window → Devices and Simulators → Simulators)
 
 ## Local Development
@@ -79,21 +84,21 @@ Open the **Output** panel and select **Tabbed Emulator** from the dropdown to se
 
 ## Extension Settings
 
-| Setting                              | Default | Description                                                                                                         |
-| ------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------- |
-| `tabbedEmulator.androidSdkPath`      | `""`    | Path to Android SDK root. Falls back to `$ANDROID_HOME` / `$ANDROID_SDK_ROOT` / `~/Library/Android/sdk`.            |
-| `tabbedEmulator.grpcPort`            | `8554`  | gRPC port passed to the emulator. Increment if running multiple emulators.                                          |
-| `tabbedEmulator.streamMaxDimension`  | `900`   | Max pixel dimension per side for streamed frames. Lower values increase frame rate. `0` = native device resolution. |
-| `tabbedEmulator.baguettePath`        | `""`    | Path to the `baguette` binary. Falls back to `$PATH` and `/opt/homebrew/bin/baguette`.                              |
-| `tabbedEmulator.baguetteServePort`   | `8421`  | Base port for the shared `baguette serve` process. Increments by up to +10 if the port is busy.                     |
+| Setting                             | Default | Description                                                                                                         |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| `tabbedEmulator.androidSdkPath`     | `""`    | Path to Android SDK root. Falls back to `$ANDROID_HOME` / `$ANDROID_SDK_ROOT` / `~/Library/Android/sdk`.            |
+| `tabbedEmulator.grpcPort`           | `8554`  | gRPC port passed to the emulator. Increment if running multiple emulators.                                          |
+| `tabbedEmulator.streamMaxDimension` | `900`   | Max pixel dimension per side for streamed frames. Lower values increase frame rate. `0` = native device resolution. |
+| `tabbedEmulator.baguettePath`       | `""`    | Path to the `baguette` binary. Falls back to `$PATH` and `/opt/homebrew/bin/baguette`.                              |
+| `tabbedEmulator.baguetteServePort`  | `8421`  | Base port for the shared `baguette serve` process. Increments by up to +10 if the port is busy.                     |
 
 ## Commands
 
-| Command                                   | Description                              |
-| ----------------------------------------- | ---------------------------------------- |
-| `Tabbed Emulator: Open Android Emulator`  | Pick an AVD and open it in a new tab     |
-| `Tabbed Emulator: Open iOS Simulator`     | Pick a simulator and open it in a new tab|
-| `Tabbed Emulator: Stop All Sessions`      | Kill all running emulator processes      |
+| Command                                  | Description                               |
+| ---------------------------------------- | ----------------------------------------- |
+| `Tabbed Emulator: Open Android Emulator` | Pick an AVD and open it in a new tab      |
+| `Tabbed Emulator: Open iOS Simulator`    | Pick a simulator and open it in a new tab |
+| `Tabbed Emulator: Stop All Sessions`     | Kill all running emulator processes       |
 
 ## Packaging (VSIX)
 

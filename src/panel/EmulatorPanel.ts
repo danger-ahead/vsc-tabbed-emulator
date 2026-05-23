@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { FrameInfo, IEmulatorSession, IEmulatorStreamer, KeyEvent, SessionState } from '../session/types';
+import { FrameInfo, HardwareButton, IEmulatorSession, IEmulatorStreamer, KeyEvent, SessionState } from '../session/types';
 
 export interface StreamerFactory {
   (): IEmulatorStreamer;
@@ -32,6 +32,10 @@ export class EmulatorPanel {
 
   private readonly disposables: vscode.Disposable[] = [];
   private client?: IEmulatorStreamer;
+  /** Promise that resolves when the underlying session has fully shut down.
+   *  Set the first time `dispose()` is called, so callers (e.g. extension
+   *  deactivate) can await the real OS-level shutdown. */
+  private stopPromise?: Promise<void>;
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
@@ -133,6 +137,7 @@ export class EmulatorPanel {
       code?: string;
       modifiers?: string[];
       text?: string;
+      button?: HardwareButton;
     };
     switch (m.type) {
       case 'ready':
@@ -156,6 +161,11 @@ export class EmulatorPanel {
           if (m.modifiers !== undefined) ev.modifiers = m.modifiers;
           if (m.text !== undefined) ev.text = m.text;
           this.client?.sendKey(ev);
+        }
+        break;
+      case 'button':
+        if (m.button === 'home' || m.button === 'recent') {
+          void this.session.pressHardwareButton(m.button);
         }
         break;
     }
@@ -184,9 +194,19 @@ export class EmulatorPanel {
   dispose(): void {
     this.client?.stop();
     this.client = undefined;
-    void this.session.stop();
+    if (!this.stopPromise) {
+      // Swallow rejections so callers can await without try/catch.
+      this.stopPromise = this.session.stop().catch(() => {});
+    }
     while (this.disposables.length) this.disposables.pop()?.dispose();
     this.panel.dispose();
+  }
+
+  /** Resolves once `session.stop()` (started by `dispose()`) has finished.
+   *  Use this when you need to know the underlying emulator/simulator
+   *  process has actually been signalled — e.g. during extension shutdown. */
+  stopped(): Promise<void> {
+    return this.stopPromise ?? Promise.resolve();
   }
 }
 

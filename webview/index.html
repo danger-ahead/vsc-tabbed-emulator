@@ -13,11 +13,28 @@
   </head>
   <body>
     <div id="stage">
-      <img id="screen" alt="" tabindex="0" />
-      <div id="status">
-        <div class="spinner"></div>
-        <div id="status-text">Starting emulator…</div>
-        <pre id="log"></pre>
+      <div id="screen-area">
+        <img id="screen" alt="" tabindex="0" />
+        <div id="status">
+          <div class="spinner"></div>
+          <div id="status-text">Starting emulator…</div>
+          <pre id="log"></pre>
+        </div>
+      </div>
+      <div id="footer">
+        <div id="footer-status"></div>
+        <div id="toolbar">
+          <button type="button" class="tb-btn" data-button="recent" title="Recent apps" aria-label="Recent apps">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+          <button type="button" class="tb-btn" data-button="home" title="Home" aria-label="Home">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
