@@ -2,7 +2,7 @@
   "name": "tabbed-emulator",
   "displayName": "Tabbed Emulator",
   "description": "Run Android emulators and iOS simulators inside a VS Code tab.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ShouryaShikhar",
   "icon": "media/marketplace-icon.png",
   "repository": {
