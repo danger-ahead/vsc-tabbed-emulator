@@ -2,15 +2,9 @@ import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { EventEmitter } from 'events';
 import * as path from 'path';
+import { FrameInfo, IEmulatorStreamer, KeyEvent } from '../session/types';
 
-export interface FrameInfo {
-  bytes: Buffer;
-  format: 'PNG' | 'RGB888' | 'RGBA8888';
-  width: number;
-  height: number;
-  display: number;
-  seq: number;
-}
+export { FrameInfo } from '../session/types';
 
 interface ImageFormatProto {
   format: 'PNG' | 'RGB888' | 'RGBA8888';
@@ -98,7 +92,7 @@ function loadEmulatorController(): grpc.ServiceClientConstructor {
   return cachedCtor;
 }
 
-export class EmulatorClient extends EventEmitter {
+export class EmulatorClient extends EventEmitter implements IEmulatorStreamer {
   private client?: EmulatorControllerClient;
   private screenshotStream?: grpc.ClientReadableStream<ImageProto>;
   private closed = false;
@@ -107,7 +101,8 @@ export class EmulatorClient extends EventEmitter {
     super();
   }
 
-  start(format: 'PNG' | 'RGB888' = 'PNG', maxDim = 0): void {
+  start(maxDim = 0): void {
+    const format: 'PNG' = 'PNG';
     const Ctor = loadEmulatorController();
     const target = `${this.host}:${this.port}`;
     this.client = new Ctor(
@@ -165,11 +160,12 @@ export class EmulatorClient extends EventEmitter {
     });
   }
 
-  sendKey(eventType: 'keydown' | 'keyup' | 'keypress', key: string, text?: string): void {
+  sendKey(event: KeyEvent): void {
     if (!this.client || this.closed) return;
-    const req: KeyboardEventProto = { eventType };
-    if (text !== undefined) req.text = text;
-    else req.key = key;
+    const req: KeyboardEventProto = { eventType: event.eventType };
+    if (event.text !== undefined) req.text = event.text;
+    else if (event.key !== undefined) req.key = event.key;
+    else return;
     this.client.sendKey(req, (err) => {
       if (err) this.emit('log', `sendKey error: ${err.message}`);
     });

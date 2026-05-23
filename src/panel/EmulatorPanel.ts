@@ -1,8 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { EmulatorClient, FrameInfo } from '../grpc/EmulatorClient';
-import { AndroidSession, SessionState } from '../session/AndroidSession';
+import { FrameInfo, IEmulatorSession, IEmulatorStreamer, KeyEvent, SessionState } from '../session/types';
+
+export interface StreamerFactory {
+  (): IEmulatorStreamer;
+}
 
 export class EmulatorPanel {
   static readonly viewType = 'tabbedEmulator.panel';
@@ -10,8 +13,8 @@ export class EmulatorPanel {
   static create(
     context: vscode.ExtensionContext,
     title: string,
-    session: AndroidSession,
-    grpcPort: number,
+    session: IEmulatorSession,
+    streamerFactory: StreamerFactory,
     streamMaxDim: number
   ): EmulatorPanel {
     const panel = vscode.window.createWebviewPanel(
@@ -24,17 +27,17 @@ export class EmulatorPanel {
         localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'webview')]
       }
     );
-    return new EmulatorPanel(panel, context, session, grpcPort, streamMaxDim);
+    return new EmulatorPanel(panel, context, session, streamerFactory, streamMaxDim);
   }
 
   private readonly disposables: vscode.Disposable[] = [];
-  private client?: EmulatorClient;
+  private client?: IEmulatorStreamer;
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
     context: vscode.ExtensionContext,
-    private readonly session: AndroidSession,
-    private readonly grpcPort: number,
+    private readonly session: IEmulatorSession,
+    private readonly streamerFactory: StreamerFactory,
     private readonly streamMaxDim: number
   ) {
     this.panel.webview.html = this.renderHtml(context);
@@ -67,10 +70,10 @@ export class EmulatorPanel {
   }
 
   private startStream(): void {
-    const client = new EmulatorClient('127.0.0.1', this.grpcPort);
+    const client = this.streamerFactory();
     this.client = client;
     client.on('log', (line: string) => {
-      this.panel.webview.postMessage({ type: 'log', line: `[grpc] ${line}` });
+      this.panel.webview.postMessage({ type: 'log', line: `[stream] ${line}` });
     });
     client.on('frame', (frame: FrameInfo) => {
       this.panel.webview.postMessage({
@@ -83,15 +86,22 @@ export class EmulatorPanel {
         size: frame.bytes.length
       });
     });
+    client.on('device', (size: { width: number; height: number }) => {
+      this.panel.webview.postMessage({
+        type: 'device',
+        width: size.width,
+        height: size.height
+      });
+    });
     client.on('closed', (err?: Error) => {
       this.panel.webview.postMessage({
         type: 'log',
-        line: `[grpc] stream closed${err ? `: ${err.message}` : ''}`
+        line: `[stream] closed${err ? `: ${err.message}` : ''}`
       });
     });
     try {
-      client.start('PNG', this.streamMaxDim);
-      void client.getDeviceSize().then((size) => {
+      client.start(this.streamMaxDim);
+      void client.getDeviceSize().then((size: { width: number; height: number } | undefined) => {
         if (size) {
           this.panel.webview.postMessage({
             type: 'device',
@@ -103,7 +113,7 @@ export class EmulatorPanel {
     } catch (err) {
       this.panel.webview.postMessage({
         type: 'log',
-        line: `[grpc] start failed: ${(err as Error).message}`
+        line: `[stream] start failed: ${(err as Error).message}`
       });
       client.stop();
       this.client = undefined;
@@ -120,6 +130,8 @@ export class EmulatorPanel {
       pressure?: number;
       eventType?: 'keydown' | 'keyup' | 'keypress';
       key?: string;
+      code?: string;
+      modifiers?: string[];
       text?: string;
     };
     switch (m.type) {
@@ -137,8 +149,13 @@ export class EmulatorPanel {
         }
         break;
       case 'key':
-        if (m.eventType && (typeof m.key === 'string' || typeof m.text === 'string')) {
-          this.client?.sendKey(m.eventType, m.key ?? '', m.text);
+        if (m.eventType) {
+          const ev: KeyEvent = { eventType: m.eventType };
+          if (m.key !== undefined) ev.key = m.key;
+          if (m.code !== undefined) ev.code = m.code;
+          if (m.modifiers !== undefined) ev.modifiers = m.modifiers;
+          if (m.text !== undefined) ev.text = m.text;
+          this.client?.sendKey(ev);
         }
         break;
     }

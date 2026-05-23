@@ -1,12 +1,9 @@
 import { ChildProcess, spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import { adbBinary, emulatorBinary } from '../discovery/android';
+import { IEmulatorSession, SessionState } from './types';
 
-export type SessionState =
-  | { kind: 'starting' }
-  | { kind: 'running'; serial: string }
-  | { kind: 'stopped'; reason?: string }
-  | { kind: 'error'; message: string };
+export { SessionState } from './types';
 
 export interface AndroidSessionOptions {
   sdkPath: string;
@@ -15,7 +12,7 @@ export interface AndroidSessionOptions {
   consolePort?: number;
 }
 
-export class AndroidSession extends EventEmitter {
+export class AndroidSession extends EventEmitter implements IEmulatorSession {
   private proc?: ChildProcess;
   private bootPoller?: NodeJS.Timeout;
   private _state: SessionState = { kind: 'stopped' };

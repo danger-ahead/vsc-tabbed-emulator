@@ -1,7 +1,14 @@
 const vscode = acquireVsCodeApi();
 const stage = document.getElementById('stage');
 const screenEl = /** @type {HTMLImageElement} */ (document.getElementById('screen'));
-screenEl.addEventListener('error', () => appendLog(`<img> load error for src=${screenEl.src.slice(0, 50)}…`));
+screenEl.addEventListener('error', () => {
+  // The img element fires `error` whenever its `src` resolves to something
+  // unloadable, including when no src is set (browsers resolve "" to the
+  // document URL). Ignore those — only log if we actually set a data URL.
+  if (screenEl.src.startsWith('data:')) {
+    appendLog(`<img> load error for ${screenEl.src.slice(0, 40)}…`);
+  }
+});
 const statusText = document.getElementById('status-text');
 const logEl = document.getElementById('log');
 
@@ -25,7 +32,8 @@ let deviceHeight = 0;
 
 /** @param {string} base64 @param {string} format @param {number} size @param {number} width @param {number} height */
 function showFrame(base64, format, size, width, height) {
-  if (format !== 'PNG') {
+  const mime = format === 'JPEG' ? 'image/jpeg' : format === 'PNG' ? 'image/png' : null;
+  if (!mime) {
     appendLog(`unsupported frame format: ${format}`);
     return;
   }
@@ -36,7 +44,7 @@ function showFrame(base64, format, size, width, height) {
   if (framesReceived < 3) {
     appendLog(`frame #${framesReceived + 1} size=${size} ${width}x${height}`);
   }
-  screenEl.src = `data:image/png;base64,${base64}`;
+  screenEl.src = `data:${mime};base64,${base64}`;
 
   framesReceived += 1;
   framesSinceTick += 1;
@@ -84,12 +92,12 @@ function handleState(state) {
     case 'stopped':
       statusText.textContent = `Stopped${state.reason ? `: ${state.reason}` : ''}`;
       stage.classList.remove('has-stream');
-      screenEl.src = '';
+      screenEl.removeAttribute('src');
       break;
     case 'error':
       statusText.textContent = `Error: ${state.message}`;
       stage.classList.remove('has-stream');
-      screenEl.src = '';
+      screenEl.removeAttribute('src');
       break;
   }
 }
@@ -165,7 +173,16 @@ function forwardKey(eventType, e) {
   if (!keyboardArmed) return;
   // Don't fight VS Code shortcuts — let modifier combos through.
   if (e.ctrlKey || e.metaKey) return;
-  vscode.postMessage({ type: 'key', eventType, key: e.key });
+  const modifiers = [];
+  if (e.shiftKey) modifiers.push('shift');
+  if (e.altKey)   modifiers.push('option');
+  vscode.postMessage({
+    type: 'key',
+    eventType,
+    key: e.key,
+    code: e.code,
+    modifiers
+  });
   e.preventDefault();
 }
 
