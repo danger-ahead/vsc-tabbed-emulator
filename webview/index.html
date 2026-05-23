@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none';
+                   img-src ${cspSource} https: data: blob:;
+                   style-src ${cspSource} 'unsafe-inline';
+                   script-src 'nonce-${nonce}';
+                   connect-src 'none';" />
+    <link rel="stylesheet" href="${styleUri}" />
+    <title>Emulator</title>
+  </head>
+  <body>
+    <div id="stage">
+      <img id="screen" alt="" tabindex="0" />
+      <div id="status">
+        <div class="spinner"></div>
+        <div id="status-text">Starting emulator…</div>
+        <pre id="log"></pre>
+      </div>
+    </div>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
+  </body>
+</html>

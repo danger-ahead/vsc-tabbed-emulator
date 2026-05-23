@@ -1,0 +1,63 @@
+{
+  "name": "tabbed-emulator",
+  "displayName": "Tabbed Emulator",
+  "description": "Run Android emulators and iOS simulators inside a VS Code tab.",
+  "version": "0.0.1",
+  "publisher": "shouryaghosh",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "tabbedEmulator.openAndroid",
+        "title": "Tabbed Emulator: Open Android Emulator"
+      },
+      {
+        "command": "tabbedEmulator.stopAll",
+        "title": "Tabbed Emulator: Stop All Sessions"
+      }
+    ],
+    "configuration": {
+      "title": "Tabbed Emulator",
+      "properties": {
+        "tabbedEmulator.androidSdkPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the Android SDK. Falls back to $ANDROID_HOME / $ANDROID_SDK_ROOT."
+        },
+        "tabbedEmulator.grpcPort": {
+          "type": "number",
+          "default": 8554,
+          "description": "Base gRPC port used when launching the Android emulator."
+        },
+        "tabbedEmulator.streamMaxDimension": {
+          "type": "number",
+          "default": 900,
+          "description": "Max pixel dimension (per side) of streamed frames. Lower = higher fps. 0 = native device resolution."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.4",
+    "@grpc/proto-loader": "^0.8.1"
+  }
+}
