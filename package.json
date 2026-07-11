@@ -40,6 +40,57 @@
       {
         "command": "tabbedEmulator.stopAll",
         "title": "Tabbed Emulator: Stop All Sessions"
+      },
+      {
+        "command": "tabbedEmulator.passthroughKey",
+        "title": "Tabbed Emulator: (internal) suppress VS Code keybinding so the webview can forward it"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "cmd+k",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+shift+k",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+a",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+c",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+v",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+x",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+z",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+shift+z",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
+      },
+      {
+        "key": "cmd+f",
+        "command": "tabbedEmulator.passthroughKey",
+        "when": "activeWebviewPanelId == 'tabbedEmulator.panel' && isMac"
       }
     ],
     "configuration": {

@@ -176,11 +176,11 @@ screenEl.addEventListener('pointerdown', () => { keyboardArmed = true; });
 
 function forwardKey(eventType, e) {
   if (!keyboardArmed) return;
-  // Don't fight VS Code shortcuts — let modifier combos through.
-  if (e.ctrlKey || e.metaKey) return;
   const modifiers = [];
   if (e.shiftKey) modifiers.push('shift');
   if (e.altKey)   modifiers.push('option');
+  if (e.metaKey)  modifiers.push('command');
+  if (e.ctrlKey)  modifiers.push('control');
   vscode.postMessage({
     type: 'key',
     eventType,

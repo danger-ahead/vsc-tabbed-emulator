@@ -22,7 +22,12 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('tabbedEmulator.openIos', () =>
       openIos(context)
     ),
-    vscode.commands.registerCommand('tabbedEmulator.stopAll', () => stopAll(8000))
+    vscode.commands.registerCommand('tabbedEmulator.stopAll', () => stopAll(8000)),
+    // No-op command bound to chord/text-editing combos in package.json's
+    // `keybindings`, so VS Code's default handlers (chord prefix, editor
+    // commands) don't fire when our webview panel is focused. The webview
+    // still receives the underlying keydown and forwards it to the simulator.
+    vscode.commands.registerCommand('tabbedEmulator.passthroughKey', () => {})
   );
 }
 
